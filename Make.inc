@@ -1459,7 +1459,6 @@ LIBGCC_INSTALL_DEPLIB := $(call dep_lib_path,$(libdir),$(private_shlibdir)/$(LIB
 
 # We list:
 #  * libgcc_s, because FreeBSD needs to load ours, not the system one.
-#  * libopenlibm, because Windows has an untrustworthy libm, and we want to use ours more than theirs
 #  * libjulia-internal, which must always come second-to-last.
 #  * libjulia-codegen, which must always come last
 #
@@ -1467,6 +1466,7 @@ LIBGCC_INSTALL_DEPLIB := $(call dep_lib_path,$(libdir),$(private_shlibdir)/$(LIB
 #  * debug builds must link against libjuliadebug, not libjulia
 #  * install time relative paths are not equal to build time relative paths (../lib vs. ../lib/julia)
 # That second point will no longer be true for most deps once they are placed within Artifacts directories.
+<<<<<<< HEAD
 # Note that we prefix `libjulia-codegen` and `libjulia-internal` with `@` to signify to the loader that it
 # should not automatically dlopen() it in its loading loop.
 LOADER_BUILD_DEP_LIBS = $(LIBGCC_BUILD_DEPLIB):@$(LIBJULIAINTERNAL_BUILD_DEPLIB):@$(LIBJULIACODEGEN_BUILD_DEPLIB):
