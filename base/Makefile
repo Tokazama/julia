@@ -46,7 +46,6 @@ ifeq ($(XC_HOST),)
 else
 	@echo "const MACHINE = \"$(XC_HOST)\"" >> $@
 endif
-	@echo "const libm_name = \"$(LIBMNAME)\"" >> $@
 	@echo "const libblas_name = \"$(LIBBLASNAME)\"" >> $@
 	@echo "const liblapack_name = \"$(LIBLAPACKNAME)\"" >> $@
 ifeq ($(USE_BLAS64), 1)
