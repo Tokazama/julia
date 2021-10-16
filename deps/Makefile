@@ -74,12 +74,6 @@ PATCHELF_BIN := $(CUSTOM_LD_LIBRARY_PATH) $(PATCHELF)
 
 ## USE_SYSTEM_LIBS options
 
-ifeq ($(USE_SYSTEM_OPENLIBM), 0)
-ifeq ($(USE_SYSTEM_LIBM), 0)
-DEP_LIBS += openlibm
-endif
-endif
-
 ifeq ($(USE_SYSTEM_DSFMT), 0)
 DEP_LIBS += dsfmt
 endif
