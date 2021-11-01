@@ -823,6 +823,12 @@ function sroa_pass!(ir::IRCode)
             allblocks = sort(vcat(phiblocks, ldu.def_bbs))
             blocks[fidx] = phiblocks, allblocks
             if fidx + 1 > length(defexpr.args)
+                # even if the allocation contains uninitialized field,
+                # we try extra effort to check if all use has "solid" definitions:
+                # we give up the cases below:
+                # `def == idx`: this field can only defined at the allocation site (thus this case will throw)
+                # `def == 0`: this field comes from `PhiNode`
+                # we may traverse control flows of PhiNode values, but it sounds more complicated than beneficial
                 for use in du.uses
                     def = find_def_for_use(ir, domtree, allblocks, du, use)[1]
                     (def == 0 || def == idx) && @goto skip
