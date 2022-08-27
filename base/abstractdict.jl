@@ -215,12 +215,12 @@ Dict{Int64, Int64} with 3 entries:
   1 => 4
 ```
 """
-function merge!(d::AbstractDict, others::AbstractDict...)
+function merge!(d::AbstractDict, others::Union{AbstractDict,NamedTuple}...)
     for other in others
         if haslength(d) && haslength(other)
             sizehint!(d, length(d) + length(other))
         end
-        for (k,v) in other
+        for (k,v) in pairs(other)
             d[k] = v
         end
     end
@@ -273,12 +273,11 @@ Dict{Int64, Int64} with 3 entries:
   1 => 4
 ```
 """
-function mergewith!(combine, d::AbstractDict, others::AbstractDict...)
+function mergewith!(combine, d::AbstractDict, others::Union{AbstractDict,NamedTuple}...)
     foldl(mergewith!(combine), others; init = d)
 end
-
-function mergewith!(combine, d1::AbstractDict, d2::AbstractDict)
-    for (k, v) in d2
+function mergewith!(combine, d1::AbstractDict, d2::Union{AbstractDict,NamedTuple})
+    for (k, v) in pairs(d2)
         d1[k] = haskey(d1, k) ? combine(d1[k], v) : v
     end
     return d1
@@ -350,7 +349,7 @@ Dict{String, Float64} with 3 entries:
   "foo" => 0.0
 ```
 """
-merge(d::AbstractDict, others::AbstractDict...) =
+merge(d::AbstractDict, others::Union{AbstractDict,NamedTuple}...) =
     merge!(_typeddict(d, others...), others...)
 
 """
@@ -392,7 +391,7 @@ julia> ans == mergewith(+)(a, b)
 true
 ```
 """
-mergewith(combine, d::AbstractDict, others::AbstractDict...) =
+mergewith(combine, d::Union{AbstractDict,NamedTuple}, others::Union{AbstractDict,NamedTuple}...) =
     mergewith!(combine, _typeddict(d, others...), others...)
 mergewith(combine) = (args...) -> mergewith(combine, args...)
 merge(combine::Callable, d::AbstractDict, others::AbstractDict...) =
@@ -402,7 +401,7 @@ promoteK(K) = K
 promoteV(V) = V
 promoteK(K, d, ds...) = promoteK(promote_type(K, keytype(d)), ds...)
 promoteV(V, d, ds...) = promoteV(promote_type(V, valtype(d)), ds...)
-function _typeddict(d::AbstractDict, others::AbstractDict...)
+function _typeddict(d::Union{AbstractDict,NamedTuple}, others::Union{AbstractDict,NamedTuple}...)
     K = promoteK(keytype(d), others...)
     V = promoteV(valtype(d), others...)
     Dict{K,V}(d)

@@ -189,6 +189,7 @@ function show(io::IO, t::NamedTuple)
     end
 end
 
+keytype(@nospecialize T::Type{<:NamedTuple}) = Symbol
 eltype(::Type{T}) where T<:NamedTuple = nteltype(T)
 nteltype(::Type) = Any
 nteltype(::Type{NamedTuple{names,T}} where names) where {T} = eltype(T)
@@ -236,7 +237,7 @@ end
 end
 
 """
-    merge(a::NamedTuple, bs::NamedTuple...)
+    merge(va::NamedTuple, bs::NamedTuple...)
 
 Construct a new named tuple by merging two or more existing ones, in a left-associative
 manner. Merging proceeds left-to-right, between pairs of named tuples, and so the order of fields
@@ -312,6 +313,63 @@ function merge(a::NamedTuple, itr)
     end
     merge(a, NamedTuple{(names...,)}((vals...,)))
 end
+
+"""
+    mergewith(combine, va::NamedTuple, bs::NamedTuple...)
+
+Construct a new named tuple by merging two or more existing ones. Fields with matching
+names are consolidated using `combine`.
+
+See also: [`merge`](@ref)
+
+!!! compat "Julia 1.9"
+    `mergewith` for `NamedTuple`s requires at least Julia 1.9.
+
+# Examples
+```jldoctest
+julia> mergewith(+, (foo = 0.0, bar = 42.0), (baz = 17, bar = 4711))
+(foo = 0.0, bar = 4753.0, baz = 17)
+```
+"""
+function mergewith(combine, a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
+    if @generated
+        names = merge_names(an, bn)
+        t = Expr(:tuple)
+        for n in names
+            if sym_in(n, an)
+                if sym_in(n, bn)
+                    push!(t.args, :(combine(getfield(a, $(QuoteNode(n))), getfield(b, $(QuoteNode(n))))))
+                else
+                    push!(t.args, :(getfield(a, $(QuoteNode(n)))))
+                end
+            else
+                push!(t.args, :(getfield(b, $(QuoteNode(n)))))
+            end
+        end
+        :(NamedTuple{$names}($(t)))
+    else
+        names = merge_names(an, bn)
+        NamedTuple{names}(ntuple(Val{nfields(names)}()) do i
+            n = getfield(names, i)
+            if sym_in(n, an)
+                if sym_in(n, bn)
+                    combine(getfield(a, n), getfield(b, n))
+                else
+                    getfield(a, n)
+                end
+            else
+                getfield(b, n)
+            end
+        end)
+    end
+end
+mergewith(combine, a::NamedTuple,     b::NamedTuple{()}) = a
+mergewith(combine, a::NamedTuple{()}, b::NamedTuple{()}) = a
+mergewith(combine, a::NamedTuple{()}, b::NamedTuple)     = b
+function mergewith(combine, a::NamedTuple, b::NamedTuple, cs::NamedTuple...)
+    mergewith(combine, mergewith(combine, a, b), cs...)
+end
+mergewith(combine, a::NamedTuple) = a
 
 keys(nt::NamedTuple{names}) where {names} = names
 values(nt::NamedTuple) = Tuple(nt)
