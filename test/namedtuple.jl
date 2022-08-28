@@ -131,6 +131,33 @@ end
 @test mergewith(+, NamedTuple(), NamedTuple()) == NamedTuple()
 @test mergewith(+, (a=1, b=2), (a=10,), (z=20,)) == (a = 11, b = 2, z = 20)
 
+@test @inferred(mergewith(+, (a = 1, b = 2), ())) === (a = 1, b = 2)
+@test @inferred(mergewith(+, (a = 1, b = 2), (b = 3, c = 4))) === (a = 1, b = 5, c = 4)
+@test @inferred(mergewith(+, (a = 1, b = 2), (b = 3, c = 4, d = 5, e = 6))) ===
+    (a = 1, b = 5, c = 4, d = 5, e = 6)
+@test @inferred(mergewith(
+    +,
+    (a = 1, b = 2),
+    (b = 3, c = 4, d = 5, e = 6, f = 7, g = 8, h = 9, i = 10, j = 11, k = 12, l = 13,
+     m = 14, n = 15, o = 16),
+)) ===
+    (a = 1, b = 5, c = 4, d = 5, e = 6, f = 7, g = 8, h = 9, i = 10, j = 11, k = 12, l = 13,
+     m = 14, n = 15, o = 16)
+@test @inferred(mergewith(
+    +,
+    (a = 1, b = 2),
+    (b = 3, c = 4, d = 5, e = 6, f = 7, g = 8),
+    (h = 9, i = 10, j = 11, k = 12, l = 13),
+    (m = 14, n = 15, o = 16),
+)) ===
+    (a = 1, b = 5, c = 4, d = 5, e = 6, f = 7, g = 8, h = 9, i = 10, j = 11, k = 12, l = 13,
+     m = 14, n = 15, o = 16)
+let longnt = (; (Symbol(:k, i) => i for i in 1:33)...)
+    @test mergewith(+, (;), longnt) === longnt
+end
+@test mergewith(+, (a = 1, b = 2), []) === (a = 1, b = 2)
+@test mergewith(+, (a = 1, b = 2), [:b => 3, :c => 4]) === (a = 1, b = 5, c = 4)
+
 @test keys((a=1, b=2, c=3)) == (:a, :b, :c)
 @test keys(NamedTuple()) == ()
 @test keys((a=1,)) == (:a,)

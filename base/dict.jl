@@ -731,7 +731,7 @@ function map!(f, iter::ValueIterator{<:Dict})
     return iter
 end
 
-function mergewith!(combine, d1::Dict{K, V}, d2::AbstractDict) where {K, V}
+function mergewith!(combine, d1::Dict{K, V}, d2::Union{AbstractDict,NamedTuple}) where {K, V}
     haslength(d2) && sizehint!(d1, length(d1) + length(d2))
     for (k, v) in d2
         i, sh = ht_keyindex2_shorthash!(d1, k)

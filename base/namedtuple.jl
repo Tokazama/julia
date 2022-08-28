@@ -247,6 +247,8 @@ contains that field. Fields present in only the rightmost named tuple of a pair 
 A fallback is implemented for when only a single named tuple is supplied,
 with signature `merge(a::NamedTuple)`.
 
+See also: [`mergewith`](@ref)
+
 !!! compat "Julia 1.1"
     Merging 3 or more `NamedTuple` requires at least Julia 1.1.
 
@@ -273,17 +275,12 @@ function merge(a::NamedTuple{an}, b::NamedTuple{bn}) where {an, bn}
         NamedTuple{names,types}(map(n->getfield(sym_in(n, bn) ? b : a, n), names))
     end
 end
-
 merge(a::NamedTuple,     b::NamedTuple{()}) = a
 merge(a::NamedTuple{()}, b::NamedTuple{()}) = a
 merge(a::NamedTuple{()}, b::NamedTuple)     = b
-
 merge(a::NamedTuple, b::Iterators.Pairs{<:Any,<:Any,<:Any,<:NamedTuple}) = merge(a, getfield(b, :data))
-
 merge(a::NamedTuple, b::Iterators.Zip{<:Tuple{Any,Any}}) = merge(a, NamedTuple{Tuple(b.is[1])}(b.is[2]))
-
 merge(a::NamedTuple, b::NamedTuple, cs::NamedTuple...) = merge(merge(a, b), cs...)
-
 merge(a::NamedTuple) = a
 
 """
@@ -315,7 +312,7 @@ function merge(a::NamedTuple, itr)
 end
 
 """
-    mergewith(combine, va::NamedTuple, bs::NamedTuple...)
+    mergewith(combine, va::NamedTuple, bs...)
 
 Construct a new named tuple by merging two or more existing ones. Fields with matching
 names are consolidated using `combine`.
@@ -366,7 +363,16 @@ end
 mergewith(combine, a::NamedTuple,     b::NamedTuple{()}) = a
 mergewith(combine, a::NamedTuple{()}, b::NamedTuple{()}) = a
 mergewith(combine, a::NamedTuple{()}, b::NamedTuple)     = b
-function mergewith(combine, a::NamedTuple, b::NamedTuple, cs::NamedTuple...)
+function mergewith(combine, a::NamedTuple, b::Pairs{<:Any,<:Any,<:Any,<:NamedTuple})
+    mergewith(combine, a, getfield(b, :data))
+end
+function mergewith(combine, a::NamedTuple, b)
+    return _foldl_impl(a, b) do nt, (k, v)
+        @inline
+        merge(nt, (; k => haskey(nt, k) ? combine(nt[k], v) : v))
+    end
+end
+function mergewith(combine, a::NamedTuple, b, cs...)
     mergewith(combine, mergewith(combine, a, b), cs...)
 end
 mergewith(combine, a::NamedTuple) = a

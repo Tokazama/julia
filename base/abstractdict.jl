@@ -215,7 +215,7 @@ Dict{Int64, Int64} with 3 entries:
   1 => 4
 ```
 """
-function merge!(d::AbstractDict, others::Union{AbstractDict,NamedTuple}...)
+function merge!(d::AbstractDict, others::AbstractDict...)
     for other in others
         if haslength(d) && haslength(other)
             sizehint!(d, length(d) + length(other))
@@ -273,11 +273,11 @@ Dict{Int64, Int64} with 3 entries:
   1 => 4
 ```
 """
-function mergewith!(combine, d::AbstractDict, others::Union{AbstractDict,NamedTuple}...)
+function mergewith!(combine, d::AbstractDict, others::AbstractDict...)
     foldl(mergewith!(combine), others; init = d)
 end
-function mergewith!(combine, d1::AbstractDict, d2::Union{AbstractDict,NamedTuple})
-    for (k, v) in pairs(d2)
+function mergewith!(combine, d1::AbstractDict, d2::AbstractDict)
+    for (k, v) in d2
         d1[k] = haskey(d1, k) ? combine(d1[k], v) : v
     end
     return d1
@@ -324,6 +324,8 @@ the merged collections. If the same key is present in another collection, the
 value for that key will be the value it has in the last collection listed.
 See also [`mergewith`](@ref) for custom handling of values with the same key.
 
+See also: [`mergewith`](@ref)
+
 # Examples
 ```jldoctest
 julia> a = Dict("foo" => 0.0, "bar" => 42.0)
@@ -349,11 +351,11 @@ Dict{String, Float64} with 3 entries:
   "foo" => 0.0
 ```
 """
-merge(d::AbstractDict, others::Union{AbstractDict,NamedTuple}...) =
+merge(d::AbstractDict, others::AbstractDict...) =
     merge!(_typeddict(d, others...), others...)
 
 """
-    mergewith(combine, d::AbstractDict, others::AbstractDict...)
+    mergewith(combine, d, others...)
     mergewith(combine)
     merge(combine, d::AbstractDict, others::AbstractDict...)
 
@@ -368,6 +370,9 @@ Method `merge(combine::Union{Function,Type}, args...)` as an alias of
 
 !!! compat "Julia 1.5"
     `mergewith` requires Julia 1.5 or later.
+
+!!! compat "Julia 1.8"
+    `mergewith` on `NamedTuple` requires Julia 1.8 or later.
 
 # Examples
 ```jldoctest
@@ -389,9 +394,12 @@ Dict{String, Float64} with 3 entries:
 
 julia> ans == mergewith(+)(a, b)
 true
+
+julia> mergewith(+, (a = 1, b = 2), (b = 3, c = 4))
+(a = 1, b = 5, c = 4)
 ```
 """
-mergewith(combine, d::Union{AbstractDict,NamedTuple}, others::Union{AbstractDict,NamedTuple}...) =
+mergewith(combine, d::AbstractDict, others::AbstractDict...) =
     mergewith!(combine, _typeddict(d, others...), others...)
 mergewith(combine) = (args...) -> mergewith(combine, args...)
 merge(combine::Callable, d::AbstractDict, others::AbstractDict...) =
